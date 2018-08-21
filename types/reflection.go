@@ -290,6 +290,10 @@ func (s *Schemas) readFields(schema *Schema, t reflect.Type) error {
 			fieldType.Kind() == reflect.Int64 {
 			schemaField.Nullable = false
 			schemaField.Default = 0
+		} else if fieldType.Kind() == reflect.Float32 ||
+			fieldType.Kind() == reflect.Float64 {
+			schemaField.Nullable = false
+			schemaField.Default = 0.0
 		}
 
 		if err := applyTag(&field, &schemaField); err != nil {
@@ -314,6 +318,12 @@ func (s *Schemas) readFields(schema *Schema, t reflect.Type) error {
 				schemaField.Default = n
 			case "boolean":
 				schemaField.Default = convert.ToBool(schemaField.Default)
+			case "float":
+				n, err := convert.ToFloat(schemaField.Default)
+				if err != nil {
+					return err
+				}
+				schemaField.Default = n
 			}
 		}
 
@@ -394,6 +404,14 @@ func toInt(value string, structField *reflect.StructField) (*int64, error) {
 	return &i, nil
 }
 
+func toFloat(value string, structField *reflect.StructField) (*float64, error) {
+	i, err := strconv.ParseFloat(value, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid number on field %s: %v", structField.Name, err)
+	}
+	return &i, nil
+}
+
 func split(input string) []string {
 	result := []string{}
 	for _, i := range strings.Split(input, "|") {
@@ -442,6 +460,10 @@ func (s *Schemas) determineSchemaType(version *APIVersion, t reflect.Type) (stri
 		fallthrough
 	case reflect.Int64:
 		return "int", nil
+	case reflect.Float32:
+		fallthrough
+	case reflect.Float64:
+		return "float", nil
 	case reflect.Interface:
 		return "json", nil
 	case reflect.Map:

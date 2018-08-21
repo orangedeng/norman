@@ -101,6 +101,19 @@ func ToNumber(value interface{}) (int64, error) {
 	return strconv.ParseInt(ToString(value), 10, 64)
 }
 
+func ToFloat(value interface{}) (float64, error) {
+	value = Singular(value)
+
+	f, ok := value.(float64)
+	if ok {
+		return f, nil
+	}
+	if n, ok := value.(json.Number); ok {
+		return n.Float64()
+	}
+	return strconv.ParseFloat(ToString(value), 64)
+}
+
 func Capitalize(s string) string {
 	if len(s) <= 1 {
 		return strings.ToUpper(s)
